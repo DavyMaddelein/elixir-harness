@@ -1,0 +1,26 @@
+# Two-node cluster
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+Same code, two BEAM nodes. No containers — shortnames plus local epmd.
+
+```elixir
+{:ok, _} = ElixirHarness.Cluster.ensure_distributed()
+{:ok, peer} = ElixirHarness.Cluster.start_peer(:demo_peer)
+:ok = ElixirHarness.Cluster.ensure_app(peer.node)
+tasks = for i <- 1..6, do: {ElixirHarness.Tools.Math, %{"op" => "add", "a" => i, "b" => 0}}
+ElixirHarness.Orchestrator.fan_out(tasks, nodes: [Node.self(), peer.node])
+```
+
+Now the drama:
+
+```elixir
+ElixirHarness.Cluster.stop_peer(peer, :kill_9)
+Process.sleep(1500)
+ElixirHarness.Orchestrator.fan_out(tasks, nodes: [Node.self(), peer.node])
+```
+
+Half the batch returns `{:error, {:badrpc, _}}`, the rest succeeds.
+Or run the narrated version: `mix showcase cluster`.

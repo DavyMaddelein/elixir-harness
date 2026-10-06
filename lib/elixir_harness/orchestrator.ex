@@ -41,17 +41,25 @@ defmodule ElixirHarness.Orchestrator do
   @spec members() :: [pid()]
   def members, do: :pg.get_members(:agents)
 
-  @doc "Fan out `{tool, args}` tasks across workers. Crashes become errors, not batch failures."
+  @doc """
+  Fan out `{tool, args}` tasks across supervised workers.
+
+  Pass `nodes: [node1, node2]` to spread work across the cluster —
+  remote workers start under the remote `DynamicSupervisor` and are
+  driven over transparent distribution. Dead nodes become
+  `{:error, {:badrpc, _}}` entries, not batch failures.
+  """
   @spec fan_out([{module(), map()}], keyword()) :: [{:ok, term()} | {:error, term()}]
   def fan_out(tasks, opts \\ []) do
     max_concurrency = Keyword.get(opts, :max_concurrency, 4)
     timeout = Keyword.get(opts, :timeout, 15_000)
+    nodes = Keyword.get(opts, :nodes, [Node.self()])
 
     tasks
+    |> Enum.with_index()
     |> Task.async_stream(
-      fn {tool, args} ->
-        {:ok, worker} = start_worker(make_ref())
-        ElixirHarness.AgentWorker.run_task(worker, {:tool, tool, args})
+      fn {{tool, args}, i} ->
+        run_on(Enum.at(nodes, rem(i, length(nodes))), tool, args)
       end,
       max_concurrency: max_concurrency,
       ordered: false,
@@ -62,13 +70,28 @@ defmodule ElixirHarness.Orchestrator do
       {:exit, reason} -> {:error, {:exit, reason}}
     end)
   end
-end
 
-defmodule ElixirHarness.Cluster do
-  @moduledoc "Distribution stub: run a call on another node, same API as local."
+  defp run_on(node, tool, args) do
+    if node == Node.self() do
+      {:ok, worker} = start_worker(make_ref())
+      ElixirHarness.AgentWorker.run_task(worker, {:tool, tool, args})
+    else
+      spec = %{id: make_ref(), start: {ElixirHarness.AgentWorker, :start_link, [make_ref()]}, restart: :temporary}
 
-  @spec rpc(node(), module(), atom(), list()) :: term() | {:badrpc, term()}
-  def rpc(node, mod, fun, args) do
-    if node == Node.self(), do: apply(mod, fun, args), else: :rpc.call(node, mod, fun, args)
+      case :rpc.call(node, DynamicSupervisor, :start_child, [ElixirHarness.AgentSupervisor, spec]) do
+        {:ok, pid} ->
+          try do
+            GenServer.call(pid, {:tool, tool, args}, 15_000)
+          catch
+            :exit, reason -> {:error, {:exit, reason}}
+          end
+
+        {:badrpc, _} = err ->
+          {:error, err}
+
+        {:error, _} = err ->
+          {:error, err}
+      end
+    end
   end
 end

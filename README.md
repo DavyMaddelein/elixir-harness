@@ -20,4 +20,12 @@ wire format to OpenCode / Cursor CLIs.
 mix deps.get
 mix test
 mix demo.crash && mix demo.parallel && mix demo.toon_stats
+mix showcase cluster
 ```
+
+## Showcases
+
+One module per demoable feature under `ElixirHarness.Showcase`
+(`mix showcase` lists, `mix showcase <name>` runs):
+
+- `cluster` — two-node fan-out surviving `kill -9`
