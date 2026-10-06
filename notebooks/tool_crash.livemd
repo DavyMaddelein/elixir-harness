@@ -1,0 +1,26 @@
+# Tool crash isolation
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+A crashing tool returns `{:error, _}`. The session survives.
+
+```elixir
+defmodule Boom do
+  use ElixirHarness.Tool
+  tool_name("boom")
+  tool_description("Raises.")
+  tool_schema(%{})
+  @impl true
+  def run(_), do: raise("boom")
+end
+
+{:ok, session} = ElixirHarness.Session.start_link()
+ElixirHarness.ToolRunner.run(Boom, %{}) |> IO.inspect(label: "crash")
+ElixirHarness.ToolRunner.run(ElixirHarness.Tools.Math, %{"op" => "add", "a" => 1, "b" => 2})
+|> IO.inspect(label: "session survives")
+```
+
+Why Elixir: `Task.Supervisor` + `Task.yield` gives timeout/kill with no
+retry library. Let-it-crash applies to tools, not sessions.

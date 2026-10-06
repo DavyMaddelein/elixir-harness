@@ -1,0 +1,18 @@
+# CLI streaming (OpenCode / Cursor)
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+Each CLI run is an Erlang `Port`: line streaming, budget kill, no blocking.
+
+```elixir
+ElixirHarness.CLI.OpenCode.run("summarize this repo",
+  exe: "/bin/echo",
+  args: [],
+  on_line: &IO.puts("line> #{&1}")
+)
+```
+
+Swap `exe: "/bin/echo"` for the real `opencode` / `cursor` binary.
+`max_ms` / `max_bytes` kill hung runs — the harness never wedges.

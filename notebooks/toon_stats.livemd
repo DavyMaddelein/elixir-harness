@@ -1,0 +1,18 @@
+# TOON token stats
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+TOON wins on uniform rows, loses on deep nesting. The harness encodes
+selectively: uniform tool defs and history as TOON, the rest as JSON.
+
+```elixir
+uniform = %{"tools" => for i <- 1..20, do: %{"name" => "tool#{i}", "description" => "does thing #{i}"}}
+nested = %{"session" => %{"id" => "abc", "meta" => %{"deep" => %{"deeper" => [1, 2, %{"x" => 1}]}}}}
+IO.inspect(ElixirHarness.Toon.stats(uniform), label: "uniform")
+IO.inspect(ElixirHarness.Toon.stats(nested), label: "nested")
+```
+
+The `[N]{fields}` header doubles as a guardrail: truncated model output
+fails strict decode and triggers a retry instead of executing garbage.

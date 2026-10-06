@@ -1,0 +1,15 @@
+# Parallel fan-out
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+`Task.async_stream` with backpressure; one crasher can't fail the batch.
+
+```elixir
+tasks = for i <- 1..8, do: {ElixirHarness.Tools.Math, %{"op" => "add", "a" => i, "b" => 0}}
+ElixirHarness.Orchestrator.fan_out(tasks, max_concurrency: 8) |> IO.inspect()
+```
+
+Workers are `GenServer`s under a `DynamicSupervisor`, found via
+`Registry`, grouped with `:pg` — all OTP built-ins, no Redis, no queue.

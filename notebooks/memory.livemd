@@ -1,0 +1,17 @@
+# Session memory
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+ETS for hot sessions (table owned by the session process),
+Mnesia `disc_copies` for persistence. TOON only at prompt-build time.
+
+```elixir
+{:ok, s} = ElixirHarness.Session.start_link()
+ElixirHarness.Session.append(s, "user", "deploy friday?")
+ElixirHarness.Session.append(s, "assistant", "only with a rollback plan")
+IO.puts(ElixirHarness.Session.to_prompt(s))
+```
+
+No Redis, no Postgres for demo scale — OTP ships the database.
