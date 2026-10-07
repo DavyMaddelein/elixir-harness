@@ -34,3 +34,4 @@ One module per demoable feature under `ElixirHarness.Showcase`
 - `calc` — safe formula evaluation vs hostile input
 - `upgrade` — hot code upgrade mid-session
 - `memory` — DETS snapshot kill-and-restore
+- `trace` — one loop turn under `:dbg`, no instrumentation

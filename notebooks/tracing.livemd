@@ -1,0 +1,28 @@
+# Tracing one loop turn
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+No instrumentation was added for this. `:dbg` sees every call because
+the VM already does — including OTP itself (`:runtime_tools` ships with
+every release).
+
+```sh
+mix demo.trace
+```
+
+```
+final: traced
+calls observed:
+  Session.append/3
+  Loop.run/4
+  Toon.encode!/1
+  Session.to_prompt/1
+  Toon.decode/1
+```
+
+For live inspection instead of printouts: `:observer.start()` graphs the
+same supervision trees mission control renders, and the tracepoints in
+`ElixirHarness.Trace` (`@traced`) are the exact seam where a debugger or
+`recon` would attach in production.
