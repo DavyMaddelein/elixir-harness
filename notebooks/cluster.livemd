@@ -24,3 +24,8 @@ ElixirHarness.Orchestrator.fan_out(tasks, nodes: [Node.self(), peer.node])
 
 Half the batch returns `{:error, {:badrpc, _}}`, the rest succeeds.
 Or run the narrated version: `mix showcase cluster`.
+
+Tests use `:peer` nodes instead of OS processes
+(`ElixirHarness.PeerCluster`): same assertions in ~0.3s, no Docker.
+Requires the local epmd daemon — it usually starts itself on first use,
+otherwise `epmd -daemon`.
