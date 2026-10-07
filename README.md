@@ -6,6 +6,13 @@ frameworks: `GenServer` sessions, `Task.Supervisor` tool isolation,
 `Port` subprocess adapters — with TOON (`toon_ex`) as the token-efficient
 wire format to OpenCode / Cursor CLIs.
 
+## Dependencies
+
+The harness runtime needs exactly two deps: `toon_ex` (TOON) and
+`telemetry` (metrics). Phoenix, LiveView, PubSub, Bandit are
+`optional: true` dashboard-only deps — `Dashboard.boot/1` raises without
+them, and the core suite (52 tests) passes with them removed entirely.
+
 ## Layout
 
 - `lib/elixir_harness/` — minimal library (`Tool`, `ToolRunner`, `Session`,
