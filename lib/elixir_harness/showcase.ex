@@ -26,7 +26,10 @@ defmodule ElixirHarness.Showcase do
       ElixirHarness.Showcase.Tiers,
       ElixirHarness.Showcase.Budgets,
       ElixirHarness.Showcase.Backpressure,
-      ElixirHarness.Showcase.Registry
+      ElixirHarness.Showcase.Registry,
+      ElixirHarness.Showcase.Streaming,
+      ElixirHarness.Showcase.Telemetry,
+      ElixirHarness.Showcase.Restarts
     ]
   end
 

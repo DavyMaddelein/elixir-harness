@@ -98,8 +98,8 @@ defmodule ElixirHarness.Dashboard.TelemetryBridge do
 
   @events [
     [:elixir_harness, :tool, :run],
-    [:elixir_harness, :toon, :encode],
-    [:elixir_harness, :toon, :decode]
+    [:elixir_harness, :toon, :encode, :stop],
+    [:elixir_harness, :toon, :decode, :stop]
   ]
 
   def topic, do: @topic
@@ -113,7 +113,7 @@ defmodule ElixirHarness.Dashboard.TelemetryBridge do
     broadcast({:tool_run, %{tool: tool, ok: ok, ms: ms, at: DateTime.utc_now()}})
   end
 
-  def handle([:elixir_harness, :toon, event], _m, _meta, _) do
+  def handle([:elixir_harness, :toon, event, :stop], _measurements, _meta, _) do
     broadcast({:toon_event, %{event: event, at: DateTime.utc_now()}})
   end
 
