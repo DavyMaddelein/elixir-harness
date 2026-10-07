@@ -38,11 +38,13 @@ defmodule ElixirHarness.Orchestrator do
   `:pg` groups, `Task.async_stream` with backpressure.
   """
 
-  @spec start_worker(term()) :: DynamicSupervisor.on_start_child()
-  def start_worker(id) do
+  @spec start_worker(term(), keyword()) :: DynamicSupervisor.on_start_child()
+  def start_worker(id, opts \\ []) do
+    restart = Keyword.get(opts, :restart, :temporary)
+
     DynamicSupervisor.start_child(
       ElixirHarness.AgentSupervisor,
-      %{id: id, start: {ElixirHarness.AgentWorker, :start_link, [id]}, restart: :temporary}
+      %{id: id, start: {ElixirHarness.AgentWorker, :start_link, [id]}, restart: restart}
     )
   end
 

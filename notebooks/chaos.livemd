@@ -1,0 +1,22 @@
+# Chaos engineering with stock OTP
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+No chaos-monkey library. Three primitives:
+
+- `Process.exit(pid, :kill)` on a permanent worker — the supervisor
+  restarts it under the same `Registry` name. Callers see a new pid,
+  never a dead name.
+- `:sys.suspend/2` — freeze a worker, watch its caller time out, resume.
+  The supervision equivalent of "what if this hangs in prod".
+- `rest_for_one` — killing child `:b` restarts `:b` and everything after
+  it (`:c`), never `:a`. Ordering as a strategy flag, not code.
+
+```sh
+mix showcase chaos
+```
+
+Strategy choice is the demo: `one_for_one` isolates (tools),
+`rest_for_one` orders (pipelines). Pick per subtree.
