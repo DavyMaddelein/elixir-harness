@@ -3,6 +3,11 @@ defmodule ElixirHarness.Dashboard do
 
   @spec boot(pos_integer()) :: {:ok, pid()}
   def boot(port \\ 4000) do
+    unless Code.ensure_loaded?(Phoenix.Endpoint) do
+      raise ArgumentError,
+            "mission control needs the dashboard deps (phoenix, phoenix_live_view, phoenix_pubsub, bandit); the harness core runs without them"
+    end
+
     Application.put_env(:elixir_harness, ElixirHarnessWeb.Endpoint,
       url: [host: "localhost"],
       http: [port: port],
