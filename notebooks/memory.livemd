@@ -15,3 +15,12 @@ IO.puts(ElixirHarness.Session.to_prompt(s))
 ```
 
 No Redis, no Postgres for demo scale — OTP ships the database.
+
+Snapshots without a server: one DETS file per session.
+
+```elixir
+:ok = ElixirHarness.Session.snapshot(s, "/tmp/sess.dets")
+:ok = ElixirHarness.Session.restore(s2, "/tmp/sess.dets")
+```
+
+Or the narrated version: `mix showcase memory`.

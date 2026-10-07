@@ -34,6 +34,60 @@ defmodule ElixirHarness.Memory.ETS do
   end
 end
 
+defmodule ElixirHarness.Memory.DETS do
+  @moduledoc """
+  DETS-backed memory: single-file snapshots between ETS (hot) and
+  Mnesia (durable). `clear/1` closes the table, removes the file, and
+  reopens fresh — the file never lingers.
+  """
+  @behaviour ElixirHarness.Memory.Store
+
+  @impl true
+  def new do
+    tag = System.unique_integer([:positive])
+    open(Path.join(System.tmp_dir!(), "harness_mem_#{tag}.dets"))
+  end
+
+  @doc "Open (or create) the snapshot file at `path`."
+  @spec open(Path.t()) :: %{table: atom(), path: Path.t()}
+  def open(path) do
+    name = :"harness_mem_#{:erlang.phash2(path)}"
+    {:ok, ^name} = :dets.open_file(name, file: String.to_charlist(path))
+    %{table: name, path: path}
+  end
+
+  @doc "Close the table and remove its file."
+  @spec close(%{table: atom(), path: Path.t()}) :: :ok
+  def close(%{table: table, path: path}) do
+    :ok = :dets.close(table)
+    _ = File.rm(path)
+    :ok
+  end
+
+  @impl true
+  def append(%{table: table}, entry) do
+    key = :erlang.unique_integer([:monotonic, :positive])
+    :ok = :dets.insert(table, {key, entry})
+    :ok
+  end
+
+  @impl true
+  def list(%{table: table}) do
+    table
+    |> :dets.match({:"$1", :"$2"})
+    |> Enum.sort_by(&hd/1)
+    |> Enum.map(&List.last/1)
+  end
+
+  @impl true
+  def clear(%{table: table, path: path}) do
+    :ok = :dets.close(table)
+    _ = File.rm(path)
+    {:ok, ^table} = :dets.open_file(table, file: String.to_charlist(path))
+    :ok
+  end
+end
+
 defmodule ElixirHarness.Memory.Mnesia do
   @moduledoc "Mnesia-backed memory: `disc_copies` + transactions, survives restarts."
   @behaviour ElixirHarness.Memory.Store

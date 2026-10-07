@@ -33,3 +33,4 @@ One module per demoable feature under `ElixirHarness.Showcase`
 - `dashboard` — LiveView mission control with live traffic
 - `calc` — safe formula evaluation vs hostile input
 - `upgrade` — hot code upgrade mid-session
+- `memory` — DETS snapshot kill-and-restore

@@ -34,6 +34,24 @@ defmodule ElixirHarness.Session do
     |> then(&Toon.encode!(%{"history" => &1}))
   end
 
+  @doc "Snapshot history to a single DETS file at `path`."
+  def snapshot(session, path) do
+    alias ElixirHarness.Memory.DETS
+    handle = DETS.open(path)
+    Enum.each(history(session), &DETS.append(handle, &1))
+    :ok = :dets.sync(handle.table)
+    :ok
+  end
+
+  @doc "Replace history with the entries from a DETS snapshot file."
+  def restore(session, path) do
+    alias ElixirHarness.Memory.DETS
+    handle = DETS.open(path)
+    entries = DETS.list(handle)
+    :ok = :dets.close(handle.table)
+    GenServer.call(session, {:restore, entries})
+  end
+
   @impl true
   def init(:ok) do
     {:ok, %{table: ETS.new()}, {:continue, :hibernate_ok}}
@@ -49,6 +67,12 @@ defmodule ElixirHarness.Session do
   end
 
   def handle_call(:history, _from, %{table: t} = s), do: {:reply, ETS.list(t), s}
+
+  def handle_call({:restore, entries}, _from, %{table: t} = s) do
+    ETS.clear(t)
+    Enum.each(entries, &ETS.append(t, &1))
+    {:reply, :ok, s}
+  end
 
   def handle_call(:clear, _from, %{table: t} = s),
     do: {:reply, :ok, s} |> tap(fn _ -> ETS.clear(t) end)
