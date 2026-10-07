@@ -46,3 +46,38 @@ defmodule ElixirHarness.Tools.FileRead do
     end
   end
 end
+
+defmodule ElixirHarness.Tools.Calc do
+  @moduledoc """
+  Safe formula evaluator: parses with `Code.string_to_quoted/1`, accepts
+  only numeric literals and `+ - * /` (binary and unary minus), evaluates
+  with empty bindings. Anything else — calls, variables, pipes, blocks —
+  is rejected before evaluation.
+  """
+  use ElixirHarness.Tool
+
+  tool_name("calc")
+  tool_description("Evaluate an arithmetic expression, e.g. (1 + 2) * 3.")
+  tool_schema(%{"expr" => [type: :string, required: true]})
+
+  @impl true
+  def run(%{"expr" => expr}) do
+    with {:ok, ast} <- Code.string_to_quoted(expr),
+         true <- safe?(ast) do
+      try do
+        {result, _} = Code.eval_quoted(ast, [])
+        {:ok, result}
+      rescue
+        e in ArithmeticError -> {:error, "arithmetic error: #{Exception.message(e)}"}
+      end
+    else
+      {:error, _} -> {:error, "could not parse expression"}
+      false -> {:error, "unsafe expression: only numbers and + - * / allowed"}
+    end
+  end
+
+  defp safe?({op, _, [l, r]}) when op in [:+, :-, :*, :/], do: safe?(l) and safe?(r)
+  defp safe?({:-, _, [x]}), do: safe?(x)
+  defp safe?(n) when is_number(n), do: true
+  defp safe?(_), do: false
+end
