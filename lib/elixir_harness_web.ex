@@ -1,3 +1,14 @@
+defmodule ElixirHarnessWeb.Json do
+  @moduledoc """
+  Phoenix JSON adapter over OTP's built-in `:json` module.
+  Keeps Jason out of the tree entirely — sockets included.
+  """
+
+  def decode!(binary), do: :json.decode(binary)
+  def encode!(term), do: term |> encode_to_iodata!() |> IO.iodata_to_binary()
+  def encode_to_iodata!(term), do: :json.encode(term)
+end
+
 defmodule ElixirHarnessWeb.Layouts do
   use Phoenix.Component
 

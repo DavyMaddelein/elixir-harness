@@ -8,6 +8,9 @@ defmodule ElixirHarness.Dashboard do
             "mission control needs the dashboard deps (phoenix, phoenix_live_view, phoenix_pubsub, bandit); the harness core runs without them"
     end
 
+    # Sockets use OTP's :json through our adapter — no Jason anywhere.
+    Application.put_env(:phoenix, :json_library, ElixirHarnessWeb.Json)
+
     Application.put_env(:elixir_harness, ElixirHarnessWeb.Endpoint,
       url: [host: "localhost"],
       http: [port: port],

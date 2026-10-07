@@ -24,6 +24,8 @@ defmodule ElixirHarness.DashboardTest do
   end
 
   setup do
+    Application.put_env(:phoenix, :json_library, ElixirHarnessWeb.Json)
+
     Application.put_env(:elixir_harness, ElixirHarnessWeb.Endpoint,
       secret_key_base: Base.encode64(:crypto.strong_rand_bytes(48)),
       live_view: [signing_salt: "test-salt"],
@@ -43,6 +45,23 @@ defmodule ElixirHarness.DashboardTest do
 
     render_click(view, "traffic")
     assert eventually(fn -> render(view) =~ "math" end)
+  end
+
+  test "socket serializer round-trips a LiveView join frame on OTP :json" do
+    alias Phoenix.Socket.{Message, V2}
+    frame = ~s(["1","1","lv:test","phx_join",{"url":"http://localhost:4000/"}])
+
+    assert %Message{topic: "lv:test", event: "phx_join", payload: %{"url" => _}} =
+             V2.JSONSerializer.decode!(frame, opcode: :text)
+
+    {:socket_push, :text, iodata} =
+      V2.JSONSerializer.encode!(%Message{
+        topic: "lv:test",
+        event: "phx_reply",
+        payload: %{"status" => "ok"}
+      })
+
+    assert IO.iodata_to_binary(iodata) =~ "phx_reply"
   end
 
   defp eventually(fun, tries \\ 50) do

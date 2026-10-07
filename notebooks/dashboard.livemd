@@ -10,6 +10,10 @@ Every number is a BEAM introspection call. Boot it:
 mix dashboard  # http://localhost:4000
 ```
 
+Sockets run on OTP's built-in `:json` through `ElixirHarnessWeb.Json` —
+Jason was removed from the tree and the LiveView join is covered by a
+serializer round-trip test.
+
 Sections and their backends:
 
 - Supervision tree — `Supervisor.which_children/1`, recursed.
