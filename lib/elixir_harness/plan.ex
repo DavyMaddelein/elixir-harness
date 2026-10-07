@@ -127,8 +127,6 @@ defmodule ElixirHarness.Plan do
   end
 
   defp levels(steps) do
-    deps = Map.new(steps, &{&1.id, &1.depends_on})
-
     Stream.unfold({steps, MapSet.new()}, fn
       {[], _} ->
         nil
