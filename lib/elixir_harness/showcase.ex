@@ -21,7 +21,12 @@ defmodule ElixirHarness.Showcase do
       ElixirHarness.Showcase.Memory,
       ElixirHarness.Showcase.Trace,
       ElixirHarness.Showcase.Chaos,
-      ElixirHarness.Showcase.Plan
+      ElixirHarness.Showcase.Plan,
+      ElixirHarness.Showcase.Isolation,
+      ElixirHarness.Showcase.Tiers,
+      ElixirHarness.Showcase.Budgets,
+      ElixirHarness.Showcase.Backpressure,
+      ElixirHarness.Showcase.Registry
     ]
   end
 
