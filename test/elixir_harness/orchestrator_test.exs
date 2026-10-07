@@ -38,4 +38,16 @@ defmodule ElixirHarness.OrchestratorTest do
   test "cluster rpc runs locally on self node" do
     assert 3 = ElixirHarness.Cluster.rpc(Node.self(), Kernel, :+, [1, 2])
   end
+
+  test "fan-out broadcasts each observation to the :agents group" do
+    :pg.join(:agents, self())
+    on_exit(fn -> :pg.leave(:agents, self()) end)
+
+    tasks = for i <- 1..3, do: {Math, %{"op" => "add", "a" => i, "b" => 0}}
+    assert [ok: _, ok: _, ok: _] = Orchestrator.fan_out(tasks, max_concurrency: 3) |> Enum.sort()
+
+    for _ <- 1..3 do
+      assert_receive {:observation, %{tool: "math", result: {:ok, _}}}, 5_000
+    end
+  end
 end

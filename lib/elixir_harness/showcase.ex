@@ -29,7 +29,8 @@ defmodule ElixirHarness.Showcase do
       ElixirHarness.Showcase.Registry,
       ElixirHarness.Showcase.Streaming,
       ElixirHarness.Showcase.Telemetry,
-      ElixirHarness.Showcase.Restarts
+      ElixirHarness.Showcase.Restarts,
+      ElixirHarness.Showcase.Pg
     ]
   end
 

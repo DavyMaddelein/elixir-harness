@@ -30,6 +30,9 @@ defmodule ElixirHarness.AgentWorker do
   def handle_call(:id, _from, %{id: id} = state) do
     {:reply, id, state}
   end
+
+  @impl true
+  def handle_info(_, state), do: {:noreply, state}
 end
 
 defmodule ElixirHarness.Orchestrator do
@@ -69,7 +72,13 @@ defmodule ElixirHarness.Orchestrator do
     |> Enum.with_index()
     |> Task.async_stream(
       fn {{tool, args}, i} ->
-        run_on(Enum.at(nodes, rem(i, length(nodes))), tool, args)
+        result = run_on(Enum.at(nodes, rem(i, length(nodes))), tool, args)
+        # :pg is membership; delivery is plain send. No pubsub dep.
+        for pid <- :pg.get_members(:agents) do
+          send(pid, {:observation, %{tool: tool.tool_name(), result: result}})
+        end
+
+        result
       end,
       max_concurrency: max_concurrency,
       ordered: false,
