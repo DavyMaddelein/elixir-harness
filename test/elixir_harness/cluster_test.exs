@@ -7,11 +7,16 @@ defmodule ElixirHarness.ClusterTest do
 
   test "fan-out spans two nodes and survives kill -9" do
     {:ok, _} = Cluster.ensure_distributed(:"harness_test#{System.unique_integer([:positive])}")
-    {:ok, peer} = Cluster.start_peer(:"harness_tpeer#{System.unique_integer([:positive])}", timeout: 60_000)
+
+    {:ok, peer} =
+      Cluster.start_peer(:"harness_tpeer#{System.unique_integer([:positive])}", timeout: 60_000)
+
     :ok = Cluster.ensure_app(peer.node)
 
     tasks = for i <- 1..4, do: {Math, %{"op" => "add", "a" => i, "b" => 0}}
-    assert [ok: _, ok: _, ok: _, ok: _] = Orchestrator.fan_out(tasks, nodes: [Node.self(), peer.node]) |> Enum.sort()
+
+    assert [ok: _, ok: _, ok: _, ok: _] =
+             Orchestrator.fan_out(tasks, nodes: [Node.self(), peer.node]) |> Enum.sort()
 
     :ok = Cluster.stop_peer(peer, :kill_9)
     Process.sleep(1500)

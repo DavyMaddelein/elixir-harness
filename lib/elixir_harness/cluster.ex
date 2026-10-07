@@ -36,7 +36,13 @@ defmodule ElixirHarness.Cluster do
       ["--sname", Atom.to_string(name), "--cookie", cookie] ++
         pa_args ++ ["-e", "Process.sleep(:infinity)"]
 
-    port = Port.open({:spawn_executable, System.find_executable("elixir")}, [:binary, :exit_status, args: args])
+    port =
+      Port.open({:spawn_executable, System.find_executable("elixir")}, [
+        :binary,
+        :exit_status,
+        args: args
+      ])
+
     deadline = System.monotonic_time(:millisecond) + timeout
     wait_for_node(node_name(name), port, deadline)
   end

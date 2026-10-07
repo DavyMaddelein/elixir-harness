@@ -23,7 +23,8 @@ defmodule ElixirHarness.MixProject do
   defp deps do
     [
       {:toon_ex, "~> 1.7"},
-      {:telemetry, "~> 1.0"}
+      {:telemetry, "~> 1.0"},
+      {:stream_data, "~> 1.0", only: [:test, :dev]}
     ]
   end
 end

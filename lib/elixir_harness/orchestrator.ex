@@ -76,7 +76,11 @@ defmodule ElixirHarness.Orchestrator do
       {:ok, worker} = start_worker(make_ref())
       ElixirHarness.AgentWorker.run_task(worker, {:tool, tool, args})
     else
-      spec = %{id: make_ref(), start: {ElixirHarness.AgentWorker, :start_link, [make_ref()]}, restart: :temporary}
+      spec = %{
+        id: make_ref(),
+        start: {ElixirHarness.AgentWorker, :start_link, [make_ref()]},
+        restart: :temporary
+      }
 
       case :rpc.call(node, DynamicSupervisor, :start_child, [ElixirHarness.AgentSupervisor, spec]) do
         {:ok, pid} ->

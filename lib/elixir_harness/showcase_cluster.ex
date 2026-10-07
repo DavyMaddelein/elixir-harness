@@ -8,7 +8,8 @@ defmodule ElixirHarness.Showcase.Cluster do
   def name, do: "cluster"
 
   @impl true
-  def description, do: "Fan-out across two real BEAM nodes; kill -9 one mid-batch and the batch still completes."
+  def description,
+    do: "Fan-out across two real BEAM nodes; kill -9 one mid-batch and the batch still completes."
 
   @impl true
   def run do
@@ -30,7 +31,11 @@ defmodule ElixirHarness.Showcase.Cluster do
     :ok = Cluster.stop_peer(peer, :kill_9)
     Process.sleep(1500)
     results2 = Orchestrator.fan_out(tasks, nodes: [Node.self(), peer.node], max_concurrency: 6)
-    say("   #{count_ok(results2)}/#{length(results2)} ok, #{count_err(results2)} node-down errors — batch completes anyway")
+
+    say(
+      "   #{count_ok(results2)}/#{length(results2)} ok, #{count_err(results2)} node-down errors — batch completes anyway"
+    )
+
     :ok
   end
 
