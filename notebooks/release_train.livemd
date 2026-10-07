@@ -1,0 +1,29 @@
+# The overnight release train
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+A role swarm ships rate limiting + audit to a fixture service while
+everything breakable breaks. Deterministic: file/shell tools stand in
+for model output, faults are scripted.
+
+```sh
+mix poc.release_train          # chaos armed (default)
+mix poc.release_train --clean  # no faults, for comparison
+```
+
+Phases and their machinery:
+
+1. **Planner** builds the DAG, validated by `Plan.validate!/2`.
+2. **Coders** implement on 2 nodes — then coder-a is `kill -9`'d and must
+   recover under the same name before its file is re-verified.
+3. **Peer kill** before tests: dead-node shards come back
+   `{:error, {:badrpc, _}}` and re-run locally (failover, not retry).
+4. **Reviewer** scores green/total with `calc`, under a policy module
+   that is hot-upgraded v1 → v2 mid-run.
+5. **Release manager** streams a TOON report, snapshots to DETS,
+   and the run's observations arrive via `:pg` delivery.
+
+Watch it live: `mix dashboard` in another terminal, then
+`mix showcase release-train`.

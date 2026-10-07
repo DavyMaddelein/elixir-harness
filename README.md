@@ -29,6 +29,7 @@ mix test
 mix demo.crash && mix demo.parallel && mix demo.toon_stats
 mix showcase cluster
 mix dashboard  # mission control at http://localhost:4000
+mix poc.release_train  # the swarm ships (chaos armed by default)
 ```
 
 ## Showcases

@@ -81,3 +81,53 @@ defmodule ElixirHarness.Tools.Calc do
   defp safe?(n) when is_number(n), do: true
   defp safe?(_), do: false
 end
+
+defmodule ElixirHarness.Tools.FileWrite do
+  @moduledoc "Sample tool: write contents to a file, creating parents."
+  use ElixirHarness.Tool
+
+  tool_name("file_write")
+  tool_description("Write contents to a file.")
+
+  tool_schema(%{
+    "path" => [type: :string, required: true],
+    "contents" => [type: :string, required: true]
+  })
+
+  @impl true
+  def run(%{"path" => path, "contents" => contents}) do
+    with :ok <- File.mkdir_p(Path.dirname(path)),
+         :ok <- File.write(path, contents) do
+      {:ok, "wrote #{byte_size(contents)} bytes to #{path}"}
+    else
+      {:error, reason} -> {:error, "write failed: #{:file.format_error(reason)}"}
+    end
+  end
+end
+
+defmodule ElixirHarness.Tools.ShellRun do
+  @moduledoc """
+  Sample tool: run a shell command with a timeout, returning combined
+  output. Budgets enforced by the Port runner underneath.
+  """
+  use ElixirHarness.Tool
+
+  tool_name("shell_run")
+  tool_description("Run a shell command, returns {:ok, output} on exit 0.")
+
+  tool_schema(%{
+    "cmd" => [type: :string, required: true],
+    "cd" => [type: :string, required: false],
+    "timeout_ms" => [type: :integer, required: false]
+  })
+
+  @impl true
+  def run(%{"cmd" => cmd} = args) do
+    opts =
+      []
+      |> then(&if(cd = args["cd"], do: Keyword.put(&1, :cd, cd), else: &1))
+      |> then(&if(ms = args["timeout_ms"], do: Keyword.put(&1, :max_ms, ms), else: &1))
+
+    ElixirHarness.CLI.Runner.run("/bin/sh", ["-c", cmd], opts)
+  end
+end

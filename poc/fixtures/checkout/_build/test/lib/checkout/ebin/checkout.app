@@ -1,0 +1,1 @@
+{application,checkout,[{modules,['Elixir.Checkout']},{optional_applications,[]},{applications,[kernel,stdlib,elixir]},{description,"checkout"},{registered,[]},{vsn,"0.1.0"}]}.

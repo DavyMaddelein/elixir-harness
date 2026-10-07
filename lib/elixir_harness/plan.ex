@@ -95,7 +95,10 @@ defmodule ElixirHarness.Plan do
     end
   end
 
-  defp run_steps(steps, opts) do
+  @doc "Run runtime-built steps with the same engine `defplan` compiles to."
+  @spec run_steps([map()], keyword()) ::
+          {:ok, %{atom() => {:ok, term()} | {:error, term()} | {:skipped, atom()}}}
+  def run_steps(steps, opts \\ []) do
     timeout = Keyword.get(opts, :timeout, 5_000)
     max_concurrency = Keyword.get(opts, :max_concurrency, 4)
 

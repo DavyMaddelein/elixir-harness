@@ -39,7 +39,21 @@ defmodule ElixirHarness.Showcase.Upgrade do
     File.mkdir_p!(dir)
     src = Path.join(dir, "#{vsn}.ex")
     File.write!(src, source(mod, vsn))
+    load_compiled(mod, src, dir)
+  end
 
+  @doc "Compile arbitrary `source` for `mod`, then purge + load it."
+  @spec deploy_source(module(), String.t()) :: :ok
+  def deploy_source(mod, source) do
+    tag = System.unique_integer([:positive])
+    dir = Path.join(System.tmp_dir!(), "harness_upgrade_src_#{tag}")
+    File.mkdir_p!(dir)
+    src = Path.join(dir, "mod.ex")
+    File.write!(src, source)
+    load_compiled(mod, src, dir)
+  end
+
+  defp load_compiled(mod, src, dir) do
     {:ok, [^mod], _} =
       Kernel.ParallelCompiler.compile_to_path([src], dir, return_diagnostics: true)
 
