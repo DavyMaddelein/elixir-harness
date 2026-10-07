@@ -16,6 +16,10 @@ defmodule ElixirHarness.Dashboard do
       http: [port: port],
       server: true,
       adapter: Bandit.PhoenixAdapter,
+      render_errors: [
+        view: ElixirHarnessWeb.ErrorHTML,
+        formats: [html: ElixirHarnessWeb.ErrorHTML]
+      ],
       secret_key_base: Base.encode64(:crypto.strong_rand_bytes(48)),
       live_view: [signing_salt: Base.encode64(:crypto.strong_rand_bytes(24))],
       pubsub_server: ElixirHarness.PubSub

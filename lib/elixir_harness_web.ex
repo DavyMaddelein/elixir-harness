@@ -9,6 +9,13 @@ defmodule ElixirHarnessWeb.Json do
   def encode_to_iodata!(term), do: :json.encode(term)
 end
 
+defmodule ElixirHarnessWeb.ErrorHTML do
+  use Phoenix.Component
+
+  def render("404.html", _), do: "not found"
+  def render("500.html", _), do: "internal error"
+end
+
 defmodule ElixirHarnessWeb.Layouts do
   use Phoenix.Component
 
