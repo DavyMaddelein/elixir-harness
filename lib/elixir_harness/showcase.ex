@@ -16,7 +16,8 @@ defmodule ElixirHarness.Showcase do
     [
       ElixirHarness.Showcase.Cluster,
       ElixirHarness.Showcase.Dashboard,
-      ElixirHarness.Showcase.Calc
+      ElixirHarness.Showcase.Calc,
+      ElixirHarness.Showcase.Upgrade
     ]
   end
 

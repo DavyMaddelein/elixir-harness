@@ -55,11 +55,22 @@ defmodule ElixirHarness.Cluster do
         :rpc.call(node, :init, :stop, [])
 
       :kill_9 ->
-        {:os_pid, os_pid} = Port.info(port, :os_pid)
-        System.cmd("kill", ["-9", to_string(os_pid)])
+        with {:os_pid, os_pid} when is_integer(os_pid) <- Port.info(port, :os_pid),
+             {_out, 0} <- System.cmd("kill", ["-9", to_string(os_pid)], stderr_to_stdout: true) do
+          :ok
+        else
+          _ -> :ok
+        end
     end
 
-    Port.close(port)
+    if Port.info(port) != :undefined do
+      try do
+        Port.close(port)
+      catch
+        _, _ -> :ok
+      end
+    end
+
     :ok
   end
 

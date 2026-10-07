@@ -31,3 +31,5 @@ One module per demoable feature under `ElixirHarness.Showcase`
 
 - `cluster` — two-node fan-out surviving `kill -9`
 - `dashboard` — LiveView mission control with live traffic
+- `calc` — safe formula evaluation vs hostile input
+- `upgrade` — hot code upgrade mid-session

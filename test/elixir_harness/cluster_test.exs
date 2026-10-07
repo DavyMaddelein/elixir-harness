@@ -6,6 +6,7 @@ defmodule ElixirHarness.ClusterTest do
   @moduletag timeout: 120_000
 
   test "fan-out spans two nodes and survives kill -9" do
+    on_exit(fn -> stop_distribution() end)
     {:ok, _} = Cluster.ensure_distributed(:"harness_test#{System.unique_integer([:positive])}")
 
     {:ok, peer} =
@@ -28,5 +29,14 @@ defmodule ElixirHarness.ClusterTest do
 
   test "cluster rpc runs locally on self node" do
     assert 3 = Cluster.rpc(Node.self(), Kernel, :+, [1, 2])
+  end
+
+  defp stop_distribution do
+    if Node.alive?(), do: Node.stop()
+    :ok
+  rescue
+    _ -> :ok
+  catch
+    _, _ -> :ok
   end
 end

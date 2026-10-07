@@ -1,0 +1,25 @@
+# Hot code upgrade
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+Recompile a tool module and reload it into the running VM —
+`:code.purge/1` + `:code.load_binary/3`, the same per-module mechanism
+`mix release` upgrades use. The session never drops.
+
+```elixir
+{:ok, s} = ElixirHarness.Session.start_link()
+ElixirHarness.Session.append(s, "user", "greet me")
+:ok = ElixirHarness.Showcase.Upgrade.deploy(ElixirHarness.UpgradeDemo.Greeter, 1)
+ElixirHarness.UpgradeDemo.Greeter.greet("agent")
+:ok = ElixirHarness.Showcase.Upgrade.deploy(ElixirHarness.UpgradeDemo.Greeter, 2)
+ElixirHarness.UpgradeDemo.Greeter.greet("agent")
+ElixirHarness.Session.history(s)
+```
+
+Or the narrated version: `mix showcase upgrade`.
+
+Production path: the same calls happen per-module inside a proper
+`mix release` + `release_handler` upgrade. The demo shows the mechanism;
+releases add the orchestration (appup, ordering, rollback).

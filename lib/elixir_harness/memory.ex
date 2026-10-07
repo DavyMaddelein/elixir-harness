@@ -41,17 +41,61 @@ defmodule ElixirHarness.Memory.Mnesia do
   @table :harness_memory
 
   def setup do
-    _ = :mnesia.create_schema([node()])
-    :ok = :mnesia.start()
+    # create_table takes the schema lock, which mnesia can hold while
+    # recovering from a lost peer (e.g. kill -9 in cluster tests). Bound
+    # the wait; on timeout restart mnesia and retry once.
+    :ok = mnesia_start()
 
-    # disc_copies needs a named node; unnamed dev/test falls back to ram.
-    copies =
-      if node() == :nonode@nohost, do: [ram_copies: [node()]], else: [disc_copies: [node()]]
+    if table_exists?() do
+      :ok
+    else
+      _ = :mnesia.create_schema([node()])
+      bounded_create()
+    end
+  end
 
-    case :mnesia.create_table(@table, [attributes: [:key, :entry], type: :ordered_set] ++ copies) do
+  defp bounded_create do
+    task = Task.async(fn -> do_create_table() end)
+
+    case Task.yield(task, 15_000) do
+      {:ok, :ok} ->
+        :ok
+
+      nil ->
+        Task.shutdown(task, :brutal_kill)
+        :mnesia.stop()
+        _ = :mnesia.delete_schema([node()])
+        :ok = mnesia_start()
+        do_create_table()
+    end
+  end
+
+  defp do_create_table do
+    case :mnesia.create_table(
+           @table,
+           [attributes: [:key, :entry], type: :ordered_set] ++ copies()
+         ) do
       {:atomic, :ok} -> :ok
       {:aborted, {:already_exists, _}} -> :ok
     end
+  end
+
+  defp mnesia_start do
+    case :mnesia.start() do
+      :ok -> :ok
+      {:error, {:already_started, _}} -> :ok
+    end
+  end
+
+  defp table_exists? do
+    :mnesia.system_info(:tables) |> Enum.member?(@table)
+  rescue
+    _ -> false
+  end
+
+  # disc_copies needs a named node; unnamed dev/test falls back to ram.
+  defp copies do
+    if node() == :nonode@nohost, do: [ram_copies: [node()]], else: [disc_copies: [node()]]
   end
 
   @impl true
