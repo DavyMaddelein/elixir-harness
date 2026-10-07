@@ -32,8 +32,7 @@ defmodule ElixirHarness.ClusterTest do
   end
 
   defp stop_distribution do
-    if Node.alive?(), do: Node.stop()
-    :ok
+    ElixirHarness.PeerCluster.undistribute()
   rescue
     _ -> :ok
   catch

@@ -6,10 +6,7 @@ defmodule ElixirHarness.PeerClusterTest do
   @moduletag timeout: 120_000
 
   test "peer boots, joins, runs tools, and stops with the test" do
-    on_exit(fn ->
-      if Node.alive?(), do: Node.stop()
-      :ok
-    end)
+    on_exit(fn -> ElixirHarness.PeerCluster.undistribute() end)
 
     {:ok, _} = PeerCluster.ensure_distributed()
     {:ok, peer} = PeerCluster.start_peer()

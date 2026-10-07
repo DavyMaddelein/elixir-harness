@@ -92,35 +92,67 @@ defmodule ElixirHarness.Memory.Mnesia do
   @moduledoc "Mnesia-backed memory: `disc_copies` + transactions, survives restarts."
   @behaviour ElixirHarness.Memory.Store
 
+  require Logger
+
   @table :harness_memory
 
   def setup do
-    # create_table takes the schema lock, which mnesia can hold while
-    # recovering from a lost peer (e.g. kill -9 in cluster tests). Bound
-    # the wait; on timeout restart mnesia and retry once.
+    # Schema first, then start: create_schema on a running node fails
+    # silently, and disc_copies (unlike ram_copies) requires a schema.
+    # The table wait is bounded — a stuck schema lock (e.g. mnesia
+    # recovering a kill -9'd peer) triggers one full reset + retry.
     :ok = mnesia_start()
 
-    if table_exists?() do
+    if table_usable?() do
       :ok
     else
-      _ = :mnesia.create_schema([node()])
-      bounded_create()
+      fresh_setup(2)
     end
   end
 
-  defp bounded_create do
-    task = Task.async(fn -> do_create_table() end)
+  defp fresh_setup(0) do
+    raise RuntimeError, "Mnesia setup failed for node #{node()}: schema/table could not be created"
+  end
+
+  defp fresh_setup(attempts) do
+    reset_schema!()
+    :ok = mnesia_start()
+
+    task = Task.async(&do_create_table/0)
 
     case Task.yield(task, 15_000) do
       {:ok, :ok} ->
         :ok
 
+      {:ok, {:error, reason}} ->
+        Task.shutdown(task, :brutal_kill)
+        Logger.warning("mnesia setup retry after #{inspect(reason)}")
+        fresh_setup(attempts - 1)
+
       nil ->
         Task.shutdown(task, :brutal_kill)
-        :mnesia.stop()
-        _ = :mnesia.delete_schema([node()])
-        :ok = mnesia_start()
-        do_create_table()
+        fresh_setup(attempts - 1)
+    end
+  end
+
+  # Verified reset: a half-deleted schema reports already_exists for
+  # tables that don't work. Wipe the directory when delete fails.
+  defp reset_schema! do
+    _ = :mnesia.stop()
+
+    case :mnesia.delete_schema([node()]) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        File.rm_rf!(List.to_string(:mnesia.system_info(:directory)))
+        Logger.warning("mnesia wiped directory after #{inspect(reason)}")
+        :ok
+    end
+
+    case :mnesia.create_schema([node()]) do
+      :ok -> :ok
+      {:error, {_, {:already_exists, _}}} -> :ok
     end
   end
 
@@ -131,6 +163,7 @@ defmodule ElixirHarness.Memory.Mnesia do
          ) do
       {:atomic, :ok} -> :ok
       {:aborted, {:already_exists, _}} -> :ok
+      {:aborted, reason} -> {:error, reason}
     end
   end
 
@@ -141,10 +174,26 @@ defmodule ElixirHarness.Memory.Mnesia do
     end
   end
 
-  defp table_exists? do
-    :mnesia.system_info(:tables) |> Enum.member?(@table)
+  # Listed is not enough: after a node rename the schema can name a
+  # table whose copies live on a dead node name. Usable means a copy
+  # on THIS node.
+  defp table_usable? do
+    @table in :mnesia.system_info(:tables) and
+      node() in copies_of(@table)
   rescue
     _ -> false
+  catch
+    _, _ -> false
+  end
+
+  defp copies_of(table) do
+    :mnesia.table_info(table, :ram_copies) ++
+      :mnesia.table_info(table, :disc_copies) ++
+      :mnesia.table_info(table, :disc_only_copies)
+  rescue
+    _ -> []
+  catch
+    _, _ -> []
   end
 
   # disc_copies needs a named node; unnamed dev/test falls back to ram.

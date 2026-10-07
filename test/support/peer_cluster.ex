@@ -48,6 +48,31 @@ defmodule ElixirHarness.PeerCluster do
     :ok
   end
 
+  @doc """
+  Leave distribution fully: stop the kernel and wait until it is
+  really gone. `Node.stop/0` returns before async teardown finishes;
+  the next test's setup must not run mid-shutdown.
+  """
+  @spec undistribute() :: :ok
+  def undistribute do
+    if Node.alive?(), do: Node.stop()
+    wait_until(fn -> :erlang.whereis(:net_kernel) == :undefined end, 10_000)
+    :ok
+  end
+
+  defp wait_until(fun, timeout) do
+    deadline = System.monotonic_time(:millisecond) + timeout
+    wait_loop(fun, deadline)
+  end
+
+  defp wait_loop(fun, deadline) do
+    cond do
+      fun.() -> :ok
+      System.monotonic_time(:millisecond) > deadline -> :ok
+      true -> Process.sleep(50) && wait_loop(fun, deadline)
+    end
+  end
+
   defp origin_paths do
     :code.get_path() |> Enum.map(&List.to_string/1)
   end
