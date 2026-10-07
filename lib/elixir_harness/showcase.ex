@@ -20,7 +20,8 @@ defmodule ElixirHarness.Showcase do
       ElixirHarness.Showcase.Upgrade,
       ElixirHarness.Showcase.Memory,
       ElixirHarness.Showcase.Trace,
-      ElixirHarness.Showcase.Chaos
+      ElixirHarness.Showcase.Chaos,
+      ElixirHarness.Showcase.Plan
     ]
   end
 

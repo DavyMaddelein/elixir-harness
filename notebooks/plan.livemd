@@ -1,0 +1,24 @@
+# Plans that compile to task graphs
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+`defplan` is a macro, not a runtime builder: dependencies are validated
+at compile time. Unknown steps and cycles fail the build, not the demo.
+
+```sh
+mix showcase plan
+```
+
+```
+a: {:ok, 2}
+b: {:ok, "hi"}
+boom: {:error, ...}
+after_boom: {:skipped, :boom}
+join: {:ok, "joined"}
+```
+
+Levels run concurrently (`async_stream`), failures halt only their
+transitive dependents. The `deftool` macro was act one; plans compose
+macros into graphs.

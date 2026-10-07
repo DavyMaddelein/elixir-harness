@@ -36,3 +36,4 @@ One module per demoable feature under `ElixirHarness.Showcase`
 - `memory` — DETS snapshot kill-and-restore
 - `trace` — one loop turn under `:dbg`, no instrumentation
 - `chaos` — kill/suspend recovery and `rest_for_one` ordering
+- `plan` — `defplan` diamond graph with failure halting
