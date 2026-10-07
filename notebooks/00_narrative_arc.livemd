@@ -1,0 +1,103 @@
+# The Narrative Arc: from one tool to a shipping swarm
+
+Run this top to bottom. Each act proves one claim; the finale uses all of them.
+Timings assume a warm `_build` (`mix test` once first).
+
+## Act 1 — One tool, supervised (5 min)
+
+Claim: a tool can die any death and the session never notices.
+
+```sh
+mix demo.crash
+mix showcase budgets
+mix showcase calc
+```
+
+Watch for: `{:error, ...}` where Python would raise; the harness continuing
+on the next line. Then `notebooks/tool_crash.livemd` for the interactive
+version. Primitives: `Task.Supervisor`, `Task.yield`, AST whitelisting.
+
+## Act 2 — Memory that outlives processes (5 min)
+
+Claim: OTP ships the database.
+
+```sh
+mix showcase memory
+mix demo.memory
+```
+
+Watch for: ETS gone with its owner (`:undefined`), Mnesia rows surviving,
+one file snapshot restoring a murdered session. Then
+`notebooks/memory.livemd`. Primitives: `:ets`, `:mnesia`, `:dets`.
+
+## Act 3 — Many agents (5 min)
+
+Claim: orchestration without a queue, a registry lib, or a pubsub dep.
+
+```sh
+mix showcase registry
+mix showcase pg
+mix showcase backpressure
+mix showcase plan
+```
+
+Watch for: named calls with no pid plumbing, observations arriving via
+`:pg` + `send`, 8×200ms in ~800ms at `max_concurrency: 2`, a diamond plan
+halting only the failed branch. Then `notebooks/parallel.livemd`.
+Primitives: `DynamicSupervisor`, `Registry`, `:pg`, `async_stream`, macros.
+
+## Act 4 — Many nodes (5 min)
+
+Claim: same code, two machines, one kill -9.
+
+```sh
+mix showcase cluster
+```
+
+Watch for: 6/6 across nodes, `:nodedown` arriving unprompted, 3/6 + 3
+`badrpc` — batch completes anyway. Tests do the same in 0.3s with `:peer`.
+Then `notebooks/cluster.livemd`. Primitives: distribution, `Node.monitor`,
+`:rpc`, `:peer`.
+
+## Act 5 — See everything (5 min)
+
+Claim: the VM already knows; we just render it.
+
+```sh
+mix showcase trace
+mix dashboard  # http://localhost:4000, then mix showcase telemetry
+```
+
+Watch for: a full call path with zero instrumentation, a supervision tree
+that is `which_children` all the way down, tool timings arriving over
+PubSub. Then `notebooks/tracing.livemd`. Primitives: `:dbg`,
+`:telemetry`, LiveView.
+
+## Act 6 — Survive everything (5 min)
+
+Claim: fault tolerance as flags, and upgrades without restarts.
+
+```sh
+mix showcase chaos
+mix showcase restarts
+mix showcase upgrade
+mix demo.toon_stats
+```
+
+Watch for: same-name recovery, `:temporary` vanishing by design,
+`rest_for_one` ordering, v1 greeting then v2 in one VM, and the honest
+token numbers (TOON ≈ −50% uniform, +40% nested — selective, not dogma).
+
+## Finale — The overnight release train (5 min)
+
+Everything above, one story: a role swarm ships rate limiting to a
+fixture service while a worker dies, a node dies, and the scoring policy
+upgrades mid-run.
+
+```sh
+mix poc.release_train --clean   # the control group
+mix poc.release_train           # chaos armed: still ships
+```
+
+Then `notebooks/release_train.livemd`. Open `mix dashboard` alongside and
+watch the train arrive live.

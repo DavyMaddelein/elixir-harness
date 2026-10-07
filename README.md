@@ -13,6 +13,14 @@ The harness runtime needs exactly two deps: `toon_ex` (TOON) and
 `optional: true` dashboard-only deps — `Dashboard.boot/1` raises without
 them, and the core suite (52 tests) passes with them removed entirely.
 
+## Narrative arc
+
+One guided tour, six acts + finale: `notebooks/00_narrative_arc.livemd`.
+
+1. One tool, supervised → 2. Memory that outlives processes → 3. Many
+agents → 4. Many nodes → 5. See everything → 6. Survive everything →
+finale: the release train. ~35 minutes, every claim runnable.
+
 ## Layout
 
 - `lib/elixir_harness/` — minimal library (`Tool`, `ToolRunner`, `Session`,
