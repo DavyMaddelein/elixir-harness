@@ -64,7 +64,12 @@ defmodule ElixirHarnessWeb.MissionLive do
       Process.send_after(self(), :tick, 1000)
     end
 
-    {:ok, refresh(assign(socket, log: [], prompt: nil))}
+    showcases =
+      for mod <- ElixirHarness.Showcase.all(), mod.name() != "dashboard" do
+        %{name: mod.name(), description: mod.description()}
+      end
+
+    {:ok, refresh(assign(socket, log: [], prompt: nil, showcases: showcases, runs: %{}))}
   end
 
   @impl true
@@ -78,6 +83,14 @@ defmodule ElixirHarnessWeb.MissionLive do
   end
 
   def handle_info({:toon_event, _}, socket), do: {:noreply, socket}
+
+  def handle_info({:showcase_done, name, output}, socket) do
+    {:noreply, update(socket, :runs, &Map.put(&1, name, output))}
+  end
+
+  def handle_info({:showcase_failed, name, reason}, socket) do
+    {:noreply, update(socket, :runs, &Map.put(&1, name, "FAILED: #{inspect(reason)}"))}
+  end
 
   @impl true
   def handle_event("traffic", _params, socket) do
@@ -94,6 +107,29 @@ defmodule ElixirHarnessWeb.MissionLive do
     :ok = ElixirHarness.Session.append(s, "user", "deploy friday?")
     :ok = ElixirHarness.Session.append(s, "assistant", "only with a rollback plan")
     {:noreply, assign(socket, prompt: ElixirHarness.Session.to_prompt(s))}
+  end
+
+  def handle_event("run_showcase", %{"name" => name}, socket) do
+    lv = self()
+
+    Task.start(fn ->
+      case ElixirHarness.Showcase.find(name) do
+        {:ok, mod} ->
+          try do
+            output = ExUnit.CaptureIO.capture_io(fn -> mod.run() end)
+            send(lv, {:showcase_done, name, output})
+          rescue
+            e -> send(lv, {:showcase_failed, name, e})
+          catch
+            kind, reason -> send(lv, {:showcase_failed, name, {kind, reason}})
+          end
+
+        :error ->
+          send(lv, {:showcase_failed, name, :unknown})
+      end
+    end)
+
+    {:noreply, update(socket, :runs, &Map.put(&1, name, "(running…)"))}
   end
 
   defp refresh(socket) do
@@ -137,6 +173,17 @@ defmodule ElixirHarnessWeb.MissionLive do
     <section :if={@prompt}>
       <h2>Session prompt (TOON)</h2>
       <pre><%= @prompt %></pre>
+    </section>
+    <section>
+      <h2>Showcases (run live)</h2>
+      <p>dashboard excluded — you are looking at it.</p>
+      <ul>
+        <li :for={s <- @showcases}>
+          <button phx-click="run_showcase" phx-value-name={s.name}><%= s.name %></button>
+          <%= s.description %>
+          <pre :if={@runs[s.name]}><%= @runs[s.name] %></pre>
+        </li>
+      </ul>
     </section>
     """
   end

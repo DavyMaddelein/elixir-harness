@@ -47,6 +47,13 @@ defmodule ElixirHarness.DashboardTest do
     assert eventually(fn -> render(view) =~ "math" end)
   end
 
+  test "showcases run from the page and stream output" do
+    {:ok, view, _} = live(build_conn(), "/")
+    assert render(view) =~ "calc"
+    render_click(view, "run_showcase", %{"name" => "calc"})
+    assert eventually(fn -> render(view) =~ "rejected before eval" end)
+  end
+
   test "socket serializer round-trips a LiveView join frame on OTP :json" do
     alias Phoenix.Socket.{Message, V2}
     frame = ~s(["1","1","lv:test","phx_join",{"url":"http://localhost:4000/"}])
