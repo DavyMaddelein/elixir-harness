@@ -14,7 +14,8 @@ defmodule ElixirHarness.Showcase do
   @spec all() :: [module()]
   def all do
     [
-      ElixirHarness.Showcase.Cluster
+      ElixirHarness.Showcase.Cluster,
+      ElixirHarness.Showcase.Dashboard
     ]
   end
 

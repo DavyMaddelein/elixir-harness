@@ -12,6 +12,10 @@ defmodule ElixirHarness.AgentWorker do
     GenServer.call(worker, {:tool, tool, args}, 15_000)
   end
 
+  def id(worker) do
+    GenServer.call(worker, :id)
+  end
+
   @impl true
   def init(id) do
     :pg.join(:agents, self())
@@ -21,6 +25,10 @@ defmodule ElixirHarness.AgentWorker do
   @impl true
   def handle_call({:tool, tool, args}, _from, state) do
     {:reply, ElixirHarness.ToolRunner.run(tool, args), state}
+  end
+
+  def handle_call(:id, _from, %{id: id} = state) do
+    {:reply, id, state}
   end
 end
 

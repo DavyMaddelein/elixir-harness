@@ -1,0 +1,27 @@
+# Mission control
+
+```elixir
+Mix.install([{:elixir_harness, path: "."}])
+```
+
+Every number is a BEAM introspection call. Boot it:
+
+```sh
+mix dashboard  # http://localhost:4000
+```
+
+Sections and their backends:
+
+- Supervision tree — `Supervisor.which_children/1`, recursed.
+- Agent workers — `DynamicSupervisor.which_children/1` joined with `:pg`.
+- Tool runs — `:telemetry` events forwarded over PubSub, prepended live.
+- Session prompt — `Session.to_prompt/1` TOON, on demand.
+
+```elixir
+{:ok, _} = ElixirHarness.Dashboard.boot(4000)
+tasks = for i <- 1..6, do: {ElixirHarness.Tools.Math, %{"op" => "add", "a" => i, "b" => 0}}
+ElixirHarness.Orchestrator.fan_out(tasks, max_concurrency: 6)
+```
+
+Or the narrated version: `mix showcase dashboard`.
+No metrics agent, no polling daemon — the VM already knows everything.

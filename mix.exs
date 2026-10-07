@@ -24,7 +24,14 @@ defmodule ElixirHarness.MixProject do
     [
       {:toon_ex, "~> 1.7"},
       {:telemetry, "~> 1.0"},
-      {:stream_data, "~> 1.0", only: [:test, :dev]}
+      {:stream_data, "~> 1.0", only: [:test, :dev]},
+      {:lazy_html, ">= 0.0.0", only: :test},
+      {:phoenix, "~> 1.8"},
+      {:phoenix_live_view, "~> 1.1"},
+      {:phoenix_pubsub, "~> 2.1"},
+      {:phoenix_html, "~> 4.0"},
+      {:bandit, "~> 1.0"},
+      {:jason, "~> 1.4"}
     ]
   end
 end
