@@ -27,8 +27,16 @@ defmodule ElixirHarness.Showcase.Cluster do
     results = Orchestrator.fan_out(tasks, nodes: [Node.self(), peer.node], max_concurrency: 6)
     say("   #{count_ok(results)}/#{length(results)} ok")
 
-    say("4. kill -9 the peer mid-flight, then run the batch again.")
+    say("4. Monitor the peer, kill -9 it, watch :nodedown arrive — then run the batch again.")
+    true = Node.monitor(peer.node, true)
     :ok = Cluster.stop_peer(peer, :kill_9)
+
+    receive do
+      {:nodedown, node} -> say("   :nodedown #{node} — the VM told us, no heartbeat lib")
+    after
+      10_000 -> say("   (no nodedown within 10s)")
+    end
+
     Process.sleep(1500)
     results2 = Orchestrator.fan_out(tasks, nodes: [Node.self(), peer.node], max_concurrency: 6)
 
