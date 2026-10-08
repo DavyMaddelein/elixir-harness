@@ -122,11 +122,40 @@ defmodule ElixirHarness.CLI.OpenCode.Http do
     {user, pass} = server.auth
     url = String.to_charlist(server.base_url <> path)
     headers = auth_headers(user, pass) ++ [{~c"accept", ~c"text/event-stream"}]
-    http_opts = [{:timeout, max_ms + 5_000}]
+    http_opts = if max_ms == :infinity, do: [], else: [{:timeout, max_ms + 5_000}]
 
     case :httpc.request(:get, {url, headers}, http_opts, sync: false, stream: :self) do
-      {:ok, ref} -> sse_loop(ref, "", on_event, System.monotonic_time(:millisecond) + max_ms)
-      {:error, _} = err -> err
+      {:ok, ref} ->
+        deadline =
+          if max_ms == :infinity,
+            do: :infinity,
+            else: System.monotonic_time(:millisecond) + max_ms
+
+        sse_loop(ref, "", on_event, deadline)
+
+      {:error, _} = err ->
+        err
+    end
+  end
+
+  defp sse_loop(ref, buf, on_event, :infinity) do
+    receive do
+      {:http, {^ref, :stream_start, _}} ->
+        sse_loop(ref, buf, on_event, :infinity)
+
+      {:http, {^ref, :stream, data}} ->
+        sse_loop(
+          ref,
+          drain_events(buf <> IO.iodata_to_binary(data), on_event),
+          on_event,
+          :infinity
+        )
+
+      {:http, {^ref, :stream_end, _}} ->
+        :ok
+
+      {:http, {^ref, {{_, status, _}, _, _}}} when status >= 400 ->
+        {:error, {:http_status, status}}
     end
   end
 
