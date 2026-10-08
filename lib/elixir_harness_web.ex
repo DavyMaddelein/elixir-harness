@@ -61,6 +61,7 @@ defmodule ElixirHarnessWeb.MissionLive do
   def mount(_params, _session, socket) do
     if connected?(socket) do
       Phoenix.PubSub.subscribe(ElixirHarness.PubSub, TelemetryBridge.topic())
+      Phoenix.PubSub.subscribe(ElixirHarness.PubSub, ElixirHarness.CLI.OpenCodeEvents.topic())
       Process.send_after(self(), :tick, 1000)
     end
 
@@ -69,7 +70,7 @@ defmodule ElixirHarnessWeb.MissionLive do
         %{name: mod.name(), description: mod.description()}
       end
 
-    {:ok, refresh(assign(socket, log: [], prompt: nil, showcases: showcases, runs: %{}))}
+    {:ok, refresh(assign(socket, log: [], prompt: nil, agent_events: [], showcases: showcases, runs: %{}))}
   end
 
   @impl true
@@ -83,6 +84,10 @@ defmodule ElixirHarnessWeb.MissionLive do
   end
 
   def handle_info({:toon_event, _}, socket), do: {:noreply, socket}
+
+  def handle_info({:opencode_event, event}, socket) do
+    {:noreply, update(socket, :agent_events, &[event | Enum.take(&1, 19)])}
+  end
 
   def handle_info({:showcase_done, name, output}, socket) do
     {:noreply, update(socket, :runs, &Map.put(&1, name, output))}
@@ -173,6 +178,12 @@ defmodule ElixirHarnessWeb.MissionLive do
     <section :if={@prompt}>
       <h2>Session prompt (TOON)</h2>
       <pre><%= @prompt %></pre>
+    </section>
+    <section>
+      <h2>Agent output (live from opencode server)</h2>
+      <ul>
+        <li :for={e <- @agent_events}><pre><%= inspect(e, limit: 5) %></pre></li>
+      </ul>
     </section>
     <section>
       <h2>Showcases (run live)</h2>
