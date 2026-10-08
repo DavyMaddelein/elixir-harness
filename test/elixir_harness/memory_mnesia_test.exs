@@ -31,7 +31,11 @@ defmodule ElixirHarness.MemoryMnesiaTest do
   end
 
   test "fresh setup works on a distributed node (schema-before-start)" do
-    {:ok, _} = ElixirHarness.Cluster.ensure_distributed(:"mnesia_dist_#{System.unique_integer([:positive])}")
+    {:ok, _} =
+      ElixirHarness.Cluster.ensure_distributed(
+        :"mnesia_dist_#{System.unique_integer([:positive])}"
+      )
+
     on_exit(fn -> ElixirHarness.PeerCluster.undistribute() end)
 
     _ = :mnesia.stop()

@@ -111,7 +111,8 @@ defmodule ElixirHarness.Memory.Mnesia do
   end
 
   defp fresh_setup(0) do
-    raise RuntimeError, "Mnesia setup failed for node #{node()}: schema/table could not be created"
+    raise RuntimeError,
+          "Mnesia setup failed for node #{node()}: schema/table could not be created"
   end
 
   defp fresh_setup(attempts) do
